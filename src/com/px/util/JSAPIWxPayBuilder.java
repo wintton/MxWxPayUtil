@@ -5,6 +5,11 @@ import java.util.Map;
 
 import net.sf.json.JSONObject;
 
+/**
+ * v1.0.2
+ * 
+ * @author å‘¨å·¥ 2020-06-01
+ */
 public class JSAPIWxPayBuilder implements WxPayDataBuilder {
 
 	private static String sendUrl = "https://api.mch.weixin.qq.com/pay/unifiedorder";
@@ -21,7 +26,7 @@ public class JSAPIWxPayBuilder implements WxPayDataBuilder {
 
 	public JSAPIWxPayBuilder() {
 		nonce_str = WxPayUtil.getRandomStr(20);
-		// Ä¬ÈÏ¶©µ¥Ê±¼äÎª°ëĞ¡Ê±ÄÚÓĞĞ§
+		// é»˜è®¤è®¢å•æ—¶é—´ä¸ºåŠå°æ—¶å†…æœ‰æ•ˆ
 		time_start = WxPayUtil.FormatDate(System.currentTimeMillis());
 		time_expire = WxPayUtil.FormatDate(System.currentTimeMillis() + 30 * 60 * 1000);
 
@@ -236,7 +241,7 @@ public class JSAPIWxPayBuilder implements WxPayDataBuilder {
 
 	private void getSign(String apikey, String value) throws LackParamExceptions {
 		if (apikey == null) {
-			throw new LackParamExceptions("ÉÌ»§ºÅ²Ù×÷ÃØÔ¿²»ÄÜÎª¿Õ");
+			throw new LackParamExceptions("å•†æˆ·å·æ“ä½œç§˜é’¥ä¸èƒ½ä¸ºç©º");
 		} else {
 
 			sign = WxPayUtil.MD5(signStringBuffer.toString() + "key=" + API_KEY);
@@ -247,7 +252,7 @@ public class JSAPIWxPayBuilder implements WxPayDataBuilder {
 
 		if (value == null) {
 			if (isneed) {
-				throw new LackParamExceptions("²ÎÊı" + key + "²»ÄÜÎª¿Õ");
+				throw new LackParamExceptions("å‚æ•°" + key + "ä¸èƒ½ä¸ºç©º");
 			} else {
 				return;
 			}
@@ -261,7 +266,7 @@ public class JSAPIWxPayBuilder implements WxPayDataBuilder {
 	private void signAppendParam(String key, String value, boolean isneed) throws LackParamExceptions {
 		if (value == null) {
 			if (isneed) {
-				throw new LackParamExceptions("²ÎÊı" + key + "²»ÄÜÎª¿Õ");
+				throw new LackParamExceptions("å‚æ•°" + key + "ä¸èƒ½ä¸ºç©º");
 			} else {
 				return;
 			}
@@ -272,15 +277,15 @@ public class JSAPIWxPayBuilder implements WxPayDataBuilder {
 	@Override
 	public JSONObject hand() throws LackParamExceptions {
 		if (!build) {
-			throw new LackParamExceptions("Î´build³É¹¦£¬ÇëÏÈÈ·ÈÏbuild³É¹¦ºóÔÙÔËĞĞ");
+			throw new LackParamExceptions("æœªbuildæˆåŠŸï¼Œè¯·å…ˆç¡®è®¤buildæˆåŠŸåå†è¿è¡Œ");
 		}
 		String result = "";
 		try {
-			// Õı³£ÊÇµÄÓòÃû
+			// æ­£å¸¸æ˜¯çš„åŸŸå
 			result = WxPayUtil.sendHttpsRequest(sendUrl, reStringBuffer.toString(), "text/xml", "utf-8", "POST");
 		} catch (IOException e) {
 			e.printStackTrace();
-			// ±¸ÓÃÓòÃû
+			// å¤‡ç”¨åŸŸå
 			try {
 				result = WxPayUtil.sendHttpsRequest(sendUrl2, reStringBuffer.toString(), "text/xml", "utf-8", "POST");
 			} catch (IOException e1) {
@@ -300,7 +305,7 @@ public class JSAPIWxPayBuilder implements WxPayDataBuilder {
 			resultJson.put("err_code_des", getResult.get("err_code_des"));
 		} else {
 			long curTime = System.currentTimeMillis() / 1000;
-			// ÔÙ´ÎÇ©Ãû
+			// å†æ¬¡ç­¾å
 			signStringBuffer = new StringBuffer();
 			signAppendParam("appId", appid, true);
 			signAppendParam("nonceStr", getResult.get("nonce_str"), true);

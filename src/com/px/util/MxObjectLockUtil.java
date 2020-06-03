@@ -2,13 +2,18 @@ package com.px.util;
 
 import java.util.HashMap;
 
+/**
+ * v1.0.2
+ * 
+ * @author å‘¨å·¥ 2020-06-01
+ */
 public class MxObjectLockUtil {
 	private HashMap<String, PlanLock> planLockHashMap = new HashMap<>(40);
 	private volatile static MxObjectLockUtil instance;
 
 	private MxObjectLockUtil() throws IllegalAccessException {
 		if (instance != null) {
-			throw new IllegalAccessException("¸ÃÀàÎªµ¥ÀıÄ£Ê½£¬²»¿ÉÉú³É¶îÍâµÄ¶ÔÏó");
+			throw new IllegalAccessException("è¯¥ç±»ä¸ºå•ä¾‹æ¨¡å¼ï¼Œä¸å¯ç”Ÿæˆé¢å¤–çš„å¯¹è±¡");
 		}
 	}
 

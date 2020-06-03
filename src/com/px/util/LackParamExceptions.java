@@ -1,5 +1,10 @@
 package com.px.util;
 
+/**
+ * v1.0.2
+ * 
+ * @author 周工 2020-06-01
+ */
 public class LackParamExceptions extends Exception {
 
 	/**

@@ -22,6 +22,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -36,6 +37,11 @@ import org.w3c.dom.NodeList;
 import net.sf.json.JSONObject;
 import net.sf.json.xml.XMLSerializer;
 
+/**
+ * v1.0.2
+ * 
+ * @author 周工 2020-06-01
+ */
 public class WxPayUtil {
 	private static SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -60,6 +66,7 @@ public class WxPayUtil {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 		return null;
 	}
 
@@ -169,6 +176,67 @@ public class WxPayUtil {
 		is.close();
 		connection.disconnect();
 		return stringBuffer.toString();
+	}
+
+	public static String httpClientResultGetPublicKey(String url, String xml, String mch_id, String path)
+			throws Exception {
+
+		StringBuffer reultBuffer = new StringBuffer();
+
+		KeyStore keyStore = KeyStore.getInstance("PKCS12");
+
+		FileInputStream instream = new FileInputStream(new File(path));
+		try {
+
+			keyStore.load(instream, mch_id.toCharArray());
+		} finally {
+			instream.close();
+		}
+
+		SSLContext sslcontext = SSLContexts.custom().loadKeyMaterial(keyStore, mch_id.toCharArray()).build();
+
+		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslcontext, new String[] { "TLSv1" }, null,
+				SSLConnectionSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
+
+		HttpPost httpPost = new HttpPost(url);
+		CloseableHttpClient httpclient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+		StringEntity myEntity = new org.apache.http.entity.StringEntity(xml);
+		myEntity.setContentType("text/xml;charset=UTF-8");
+		myEntity.setContentEncoding("utf-8");
+		httpPost.setHeader("Content-Type", "text/xml; charset=UTF-8");
+		httpPost.setEntity(myEntity);
+
+		CloseableHttpResponse response = null;
+		InputStream inputStream = null;
+		InputStreamReader inputStreamReader = null;
+		BufferedReader bufferedReader = null;
+		try {
+			response = httpclient.execute(httpPost);
+			HttpEntity entity = response.getEntity();
+			if (entity != null) {
+				inputStream = entity.getContent();
+				inputStreamReader = new InputStreamReader(inputStream);
+				bufferedReader = new BufferedReader(inputStreamReader);
+				String str = null;
+				while ((str = bufferedReader.readLine()) != null) {
+					reultBuffer.append(str);
+				}
+			}
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+
+			httpclient.close();
+			response.close();
+			bufferedReader.close();
+			inputStreamReader.close();
+			inputStream.close();
+			inputStream = null;
+		}
+
+		return reultBuffer.toString();
 	}
 
 	public static String doPostDataWithCert(String url, String data, String mch_id, String filPath) throws Exception {

@@ -1,98 +1,215 @@
 package com.px.util;
 
-/**
- * ÃÎĞÁ¹¤×÷ÊÒ
- * 
- * @author Áé
- * @version 1.0.2
- *
- */
+import net.sf.json.JSONObject;
+
 public class Test {
+
 	public static void main(String[] args) {
-		// Î¢ĞÅÔ¤ÏÂµ¥ µ÷ÓÃÊ¾Àı
-		JSAPIPay();
-		// »ñÈ¡openid µ÷ÓÃÊ¾Àı
+		// å¾®ä¿¡é¢„ä¸‹å• è°ƒç”¨ç¤ºä¾‹
+		// JSAPIPay();
+		// è·å–openid è°ƒç”¨ç¤ºä¾‹
 		// getOpenid();
-		// ÆóÒµ¸¶¿î µ÷ÓÃÊ¾Àı
+		// ä¼ä¸šä»˜æ¬¾ è°ƒç”¨ç¤ºä¾‹
 		// compayWxPay();
-		// ·¢ËÍÄ£°åÏûÏ¢Ê¾Àı
+		// å‘é€æ¨¡æ¿æ¶ˆæ¯ç¤ºä¾‹
 		// sendTempleMsg();
+		// è·å–å…¬é’¥ç¤ºä¾‹
+		// getWxPayPublicKey();
+		// ä»˜æ¬¾åˆ°é“¶è¡Œå¡ç¤ºä¾‹
+		// compayWxPayBank();
+		// ä»˜æ¬¾åˆ°é“¶è¡Œå¡æŸ¥è¯¢ç¤ºä¾‹
+		// compayWxPayBankQuery();
+		// å¾®ä¿¡é€€æ¬¾ç¤ºä¾‹
+		// WxPayRefund();
+		// å¾®ä¿¡é€€æ¬¾æŸ¥è¯¢ç¤ºä¾‹
+		// WxPayRefundQuery();
 	}
 
 	/**
-	 * Î¢ĞÅÔ¤ÏÂµ¥ µ÷ÓÃÊ¾Àı
+	 * å¾®ä¿¡é€€æ¬¾æŸ¥è¯¢ç¤ºä¾‹
+	 */
+	public static void WxPayRefundQuery() {
+		try {
+			WxPayRefundQueryBuilder wxPayRefundBuilder = new WxPayRefundQueryBuilder();
+			wxPayRefundBuilder.setAppid("å°ç¨‹åºæˆ–å…¬ä¼—å·APPID");
+			wxPayRefundBuilder.setMch_id("å•†æˆ·å·");
+			wxPayRefundBuilder.setAPI_KEY("å•†æˆ·å·APIKEY");
+			// ä¸‹é¢å››ä¸ªä»»é€‰ä¸€ä¸ª
+			wxPayRefundBuilder.setOut_trade_no("å•†å®¶äº¤æ˜“è®¢å•å·");
+			wxPayRefundBuilder.setOut_refund_no("é€€æ¬¾å•†å®¶è®¢å•å·");
+			wxPayRefundBuilder.setTransaction_id("å¾®ä¿¡äº¤æ˜“è®¢å•å·");
+			wxPayRefundBuilder.setRefund_id("é€€æ¬¾å¾®ä¿¡è®¢å•å·");
+
+			wxPayRefundBuilder.build();// éªŒè¯æ•°æ®
+			System.out.println(wxPayRefundBuilder.hand());// å‘é€å¤„ç†
+		} catch (LackParamExceptions e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * å¾®ä¿¡é€€æ¬¾ç¤ºä¾‹
+	 */
+	public static void WxPayRefund() {
+		try {
+			WxPayRefundBuilder wxPayRefundBuilder = new WxPayRefundBuilder("è¯ä¹¦è·¯å¾„");
+			wxPayRefundBuilder.setAppid("å°ç¨‹åºæˆ–å…¬ä¼—å·APPID");
+			wxPayRefundBuilder.setMch_id("å•†æˆ·å·");
+			wxPayRefundBuilder.setAPI_KEY("å•†æˆ·å·APIKEY");
+			wxPayRefundBuilder.setTotal_fee(101);// è¯¥è®¢å•æ€»é‡‘é¢
+			wxPayRefundBuilder.setRefund_fee(101); // é€€æ¬¾é‡‘é¢
+			wxPayRefundBuilder.setRefund_desc("æµ‹è¯•"); // é€€æ¬¾æè¿°
+			// ä»»é€‰ä¸€ä¸ª
+			wxPayRefundBuilder.setOut_trade_no("å•†å®¶äº¤æ˜“è®¢å•å·");
+			wxPayRefundBuilder.setTransaction_id("å¾®ä¿¡äº¤æ˜“è®¢å•å·");
+
+			wxPayRefundBuilder.build();// éªŒè¯æ•°æ®
+			System.out.println(wxPayRefundBuilder.hand());// å‘é€å¤„ç†
+		} catch (LackParamExceptions e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * ä¼ä¸šä»˜æ¬¾åˆ°é“¶è¡Œå¡æŸ¥è¯¢ç¤ºä¾‹
+	 */
+	public static void compayWxPayBankQuery() {
+
+		try {
+
+			CompanyWxPayBankQueryBuilder wxPayBankQueryBuilder = new CompanyWxPayBankQueryBuilder("æ”¯ä»˜è¯ä¹¦è·¯å¾„",
+					"äº¤æ˜“è®¢å•å·ï¼ˆå•†å®¶ï¼Œä¸æ˜¯å¾®ä¿¡çš„ï¼‰");
+
+			wxPayBankQueryBuilder.setMch_id("å•†æˆ·å·");
+			wxPayBankQueryBuilder.setAPI_KEY("APIKEY");
+
+			wxPayBankQueryBuilder.build();// éªŒè¯æ•°æ®
+			System.out.println(wxPayBankQueryBuilder.hand());// å‘é€å¤„ç†
+		} catch (LackParamExceptions e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * ä¼ä¸šä»˜æ¬¾åˆ°é“¶è¡Œå¡ç¤ºä¾‹
+	 */
+	public static void compayWxPayBank() {
+
+		try {
+			// è·å–å…¬é’¥
+			String key = getWxPayPublicKey();
+
+			CompanyWxPayBankBuilder wxPayBankBuilder = new CompanyWxPayBankBuilder("è¯ä¹¦è·¯å¾„", key); // key ä¸ºå¾®ä¿¡è¿”å›çš„å…¬é’¥
+
+			wxPayBankBuilder.setMch_id("å•†æˆ·å·");
+			wxPayBankBuilder.setAPI_KEY("APIKEY");
+			wxPayBankBuilder.setAmount(200); // æ”¯ä»˜é‡‘é¢
+			wxPayBankBuilder.setDesc("æ”¯ä»˜æè¿°");
+			wxPayBankBuilder.setEnc_bank_no("é“¶è¡Œå¡å¡å·");
+			wxPayBankBuilder.setEnc_true_name("çœŸå®å§“å");
+			wxPayBankBuilder.setBank_code("é“¶è¡Œç¼–ç ");
+
+			wxPayBankBuilder.build();// éªŒè¯æ•°æ®
+			System.out.println(wxPayBankBuilder.hand());// å‘é€å¤„ç†
+		} catch (LackParamExceptions e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * è·å–å…¬é’¥
+	 */
+	public static String getWxPayPublicKey() {
+
+		try {
+			GetPublicKeyBuilder builder = new GetPublicKeyBuilder("è¯ä¹¦è·¯å¾„");
+			builder.setAPI_KEY("APIKEY");
+			builder.setmch_id("å¾®ä¿¡å•†æˆ·å·");
+			builder.build();// éªŒè¯æ•°æ®
+			JSONObject result = builder.hand();
+			System.out.println(result);// å‘é€å¤„ç†
+			return result.getString("pub_key");
+		} catch (LackParamExceptions e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * å¾®ä¿¡é¢„ä¸‹å• è°ƒç”¨ç¤ºä¾‹
 	 */
 	public static void JSAPIPay() {
 		try {
 			JSAPIWxPayBuilder jsapiWxPayBuilder = new JSAPIWxPayBuilder();
-			jsapiWxPayBuilder.setAppid("Ğ¡³ÌĞòAPPID");
-			jsapiWxPayBuilder.setAttach("Ğ¯´ø²ÎÊı");
-			jsapiWxPayBuilder.setMch_id("ÉÌ»§ºÅ");
-			jsapiWxPayBuilder.setAPI_KEY("ÉÌ»§ºÅAPIÃØÔ¿");
-			jsapiWxPayBuilder.setBody("ÉÌÆ·ÄÚÈİ");
-			jsapiWxPayBuilder.setTotal_fee(50); // ½»Ò×½ğ¶î
-			jsapiWxPayBuilder.setNotify_url("»Øµ÷µØÖ·"); //
-			jsapiWxPayBuilder.setSpbill_create_ip("·¢ÆğÇëÇóµÄIP"); //
+			jsapiWxPayBuilder.setAppid("å°ç¨‹åºAPPID");
+			jsapiWxPayBuilder.setAttach("æºå¸¦å‚æ•°");
+			jsapiWxPayBuilder.setMch_id("å•†æˆ·å·");
+			jsapiWxPayBuilder.setAPI_KEY("å•†æˆ·å·APIç§˜é’¥");
+			jsapiWxPayBuilder.setBody("å•†å“å†…å®¹");
+			jsapiWxPayBuilder.setTotal_fee(50); // äº¤æ˜“é‡‘é¢
+			jsapiWxPayBuilder.setNotify_url("å›è°ƒåœ°å€"); //
+			jsapiWxPayBuilder.setSpbill_create_ip("å‘èµ·è¯·æ±‚çš„IP"); //
 			jsapiWxPayBuilder.setOpenid("OPENID");
 
-			jsapiWxPayBuilder.build();// ÑéÖ¤Êı¾İ
-			// System.out.println(jsapiWxPayBuilder.hand());// ·¢ËÍ´¦Àí
+			jsapiWxPayBuilder.build();// éªŒè¯æ•°æ®
+			System.out.println(jsapiWxPayBuilder.hand());// å‘é€å¤„ç†
 		} catch (LackParamExceptions e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * »ñÈ¡openid µ÷ÓÃÊ¾Àı
+	 * è·å–openid è°ƒç”¨ç¤ºä¾‹
 	 */
 	public static void getOpenid() {
 		try {
 			GetOpenidBuilder getOpenidBuilder = new GetOpenidBuilder();
-			getOpenidBuilder.setAppid("ÄúµÄĞ¡³ÌĞòOpenid");
-			getOpenidBuilder.setAppsecret("ÄúµÄĞ¡³ÌĞòÃØÔ¿");
-			getOpenidBuilder.setCode("Ğ¡³ÌĞòµÇÂ½Ê±»ñÈ¡µÄcode");
-			getOpenidBuilder.build();// ÑéÖ¤Êı¾İ
-			System.out.println(getOpenidBuilder.hand());// ·¢ËÍ´¦Àí
+			getOpenidBuilder.setAppid("æ‚¨çš„å°ç¨‹åºOpenid");
+			getOpenidBuilder.setAppsecret("æ‚¨çš„å°ç¨‹åºç§˜é’¥");
+			getOpenidBuilder.setCode("å°ç¨‹åºç™»é™†æ—¶è·å–çš„code");
+			getOpenidBuilder.build();// éªŒè¯æ•°æ®
+			System.out.println(getOpenidBuilder.hand());// å‘é€å¤„ç†
 		} catch (LackParamExceptions e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * ÆóÒµ¸¶¿î µ÷ÓÃÊ¾Àı
+	 * ä¼ä¸šä»˜æ¬¾ è°ƒç”¨ç¤ºä¾‹
 	 */
 	public static void compayWxPay() {
 		try {
-			CompanyWxPayBuilder compayBuilder = new CompanyWxPayBuilder("Ö¤ÊéÂ·¾¶");
-			compayBuilder.setMch_appid("±»¸¶¿îÈËÊ¹ÓÃµÄĞ¡³ÌĞòappid»ò¹«ÖÚºÅappid");
-			compayBuilder.setAPI_KEY("ÄúµÄÉÌ»§ºÅAPI²Ù×÷ÃØÔ¿");
-			compayBuilder.setDesc("¸¶¿î±¸×¢");
-			compayBuilder.setMchid("ÄúµÄÉÌ»§ºÅ");
-			compayBuilder.setOpenid("Ğ¡³ÌĞò»ò¹«ÖÚºÅ¶ÔÓ¦µÄopenid");
-			compayBuilder.setSpbill_create_ip("±¾»úip£¬²»ÄÜÊÇ localhost»ò127.0.0.1");
-			compayBuilder.setAmount(200); // Ö§¸¶½ğ¶î
 
-			compayBuilder.build(); // ÑéÖ¤Êı¾İ
-			System.out.println(compayBuilder.hand()); // ·¢ËÍ´¦Àí
+			CompanyWxPayBuilder compayBuilder = new CompanyWxPayBuilder("è¯ä¹¦è·¯å¾„");
+			compayBuilder.setMch_appid("è¢«ä»˜æ¬¾äººä½¿ç”¨çš„å°ç¨‹åºappidæˆ–å…¬ä¼—å·appid");
+			compayBuilder.setAPI_KEY("æ‚¨çš„å•†æˆ·å·APIæ“ä½œç§˜é’¥");
+			compayBuilder.setDesc("ä»˜æ¬¾å¤‡æ³¨");
+			compayBuilder.setMchid("æ‚¨çš„å•†æˆ·å·");
+			compayBuilder.setOpenid("å°ç¨‹åºæˆ–å…¬ä¼—å·å¯¹åº”çš„openid");
+			compayBuilder.setSpbill_create_ip("æœ¬æœºipï¼Œä¸èƒ½æ˜¯ localhostæˆ–127.0.0.1");
+			compayBuilder.setAmount(200); // æ”¯ä»˜é‡‘é¢
+
+			compayBuilder.build(); // éªŒè¯æ•°æ®
+			System.out.println(compayBuilder.hand()); // å‘é€å¤„ç†
 		} catch (LackParamExceptions e) {
 			e.printStackTrace();
 		}
 	}
 
 	/**
-	 * ·¢ËÍÄ£°åÏûÏ¢Ê¾Àı
+	 * å‘é€æ¨¡æ¿æ¶ˆæ¯ç¤ºä¾‹
 	 */
 	public static void sendTempleMsg() {
 		try {
-			SendTempleMsgBuilder sendTempleMsgBuilder = new SendTempleMsgBuilder("¹«ÖÚºÅAPPID", "·¢ËÍÄ£°åID");
-			sendTempleMsgBuilder.setAccess_token("access¡ª¡ªtoken");
-			sendTempleMsgBuilder.toMiniprogram("ÓÃ»§µã»÷Ä£°åÏûÏ¢Ê±Ìø×ªĞ¡³ÌĞòµÄAPPID", "Ìø×ªÂ·¾¶");
-			sendTempleMsgBuilder.toUrl("ÓÃ»§µã»÷Ä£°åÏûÏ¢Ê±Ìø×ªµÄÍøÖ·");
-			sendTempleMsgBuilder.addCostomData("×Ô¶¨ÒåÊı¾İÃû³Æ", "Ê®Áù½øÖÆÑÕÉ«Öµ", "¾ßÌåÊıÖµ"); // Ìí¼Ó×Ô¶¨ÒåÊı¾İ
-			// Ê¾Àı
-			sendTempleMsgBuilder.addCostomData("first", "#ff0000", "ÄúÓĞĞÂµÄ¹ÊÕÏÍ¨Öª");
-			sendTempleMsgBuilder.build(); // ÑéÖ¤Êı¾İ
-			System.out.println(sendTempleMsgBuilder.hand()); // ·¢ËÍ´¦Àí
+			SendTempleMsgBuilder sendTempleMsgBuilder = new SendTempleMsgBuilder("å…¬ä¼—å·APPID", "å‘é€æ¨¡æ¿ID");
+			sendTempleMsgBuilder.setAccess_token("accessâ€”â€”token");
+			sendTempleMsgBuilder.toMiniprogram("ç”¨æˆ·ç‚¹å‡»æ¨¡æ¿æ¶ˆæ¯æ—¶è·³è½¬å°ç¨‹åºçš„APPID", "è·³è½¬è·¯å¾„");
+			sendTempleMsgBuilder.toUrl("ç”¨æˆ·ç‚¹å‡»æ¨¡æ¿æ¶ˆæ¯æ—¶è·³è½¬çš„ç½‘å€");
+			sendTempleMsgBuilder.addCostomData("è‡ªå®šä¹‰æ•°æ®åç§°", "åå…­è¿›åˆ¶é¢œè‰²å€¼", "å…·ä½“æ•°å€¼"); // æ·»åŠ è‡ªå®šä¹‰æ•°æ®
+			// ç¤ºä¾‹
+			sendTempleMsgBuilder.addCostomData("first", "#ff0000", "æ‚¨æœ‰æ–°çš„æ•…éšœé€šçŸ¥");
+			sendTempleMsgBuilder.build(); // éªŒè¯æ•°æ®
+			System.out.println(sendTempleMsgBuilder.hand()); // å‘é€å¤„ç†
 		} catch (LackParamExceptions e) {
 			e.printStackTrace();
 		}

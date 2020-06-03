@@ -11,5 +11,7 @@
 	<classpathentry kind="lib" path="lib/httpcore-4.4.6.jar"/>
 	<classpathentry kind="lib" path="lib/json-lib-2.2.3-jdk13.jar"/>
 	<classpathentry kind="lib" path="lib/xom-1.2.5.jar"/>
+	<classpathentry kind="lib" path="lib/commons-codec-1.14.jar"/>
+	<classpathentry kind="lib" path="lib/bcprov-ext-jdk15to18-165.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

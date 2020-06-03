@@ -4,23 +4,28 @@ import java.io.IOException;
 
 import net.sf.json.JSONObject;
 
+/**
+ * v1.0.2
+ * 
+ * @author å‘¨å·¥ 2020-06-01
+ */
 public class SendTempleMsgBuilder implements WxPayDataBuilder {
 
 	private String appid, secret;
 	private static String sendUrl = "https://api.weixin.qq.com/cgi-bin/token";
 	private static String sendUrl2 = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=";
 	private String access_token;
-	private JSONObject sendjson; // ×îºó·¢ËÍµÄÊı¾İ
-	private JSONObject data; // ×Ô¶¨ÒåÊı¾İ
+	private JSONObject sendjson; // æœ€åå‘é€çš„æ•°æ®
+	private JSONObject data; // è‡ªå®šä¹‰æ•°æ®
 	private boolean build = false;
 	private StringBuffer reStringBuffer;
 
 	/**
 	 * 
 	 * @param toUserOpenid
-	 *            ½ÓÊÕÈËµÄopenid
+	 *            æ¥æ”¶äººçš„openid
 	 * @param template_id
-	 *            ·¢ËÍµÄÄ£°åID
+	 *            å‘é€çš„æ¨¡æ¿ID
 	 */
 	public SendTempleMsgBuilder(String toUserOpenid, String template_id) {
 		// TODO Auto-generated constructor stub
@@ -62,13 +67,21 @@ public class SendTempleMsgBuilder implements WxPayDataBuilder {
 		this.access_token = access_token;
 	}
 
+	public static String getSendUrl2() {
+		return sendUrl2;
+	}
+
+	public static void setSendUrl2(String sendUrl2) {
+		SendTempleMsgBuilder.sendUrl2 = sendUrl2;
+	}
+
 	/**
-	 * ÓÃ»§µã»÷Ä£°åÏûÏ¢ºóÌø×ªĞ¡³ÌĞò
+	 * ç”¨æˆ·ç‚¹å‡»æ¨¡æ¿æ¶ˆæ¯åè·³è½¬å°ç¨‹åº
 	 * 
 	 * @param appid
-	 *            Ìø×ªĞ¡³ÌĞòµÄAPPID
+	 *            è·³è½¬å°ç¨‹åºçš„APPID
 	 * @param pagepath
-	 *            Ìø×ªµÄÒ³Ãæ
+	 *            è·³è½¬çš„é¡µé¢
 	 */
 	public void toMiniprogram(String appid, String pagepath) {
 		JSONObject minidata = new JSONObject();
@@ -78,24 +91,24 @@ public class SendTempleMsgBuilder implements WxPayDataBuilder {
 	}
 
 	/**
-	 * ÓÃ»§µã»÷Ä£°åÏûÏ¢ºóÌø×ªÍøÒ³
+	 * ç”¨æˆ·ç‚¹å‡»æ¨¡æ¿æ¶ˆæ¯åè·³è½¬ç½‘é¡µ
 	 * 
 	 * @param url
-	 *            ÍøÒ³µØÖ·
+	 *            ç½‘é¡µåœ°å€
 	 */
 	public void toUrl(String url) {
 		sendjson.put("url", url);
 	}
 
 	/**
-	 * Ìí¼Ó×Ô¶¨Òå²ÎÊı
+	 * æ·»åŠ è‡ªå®šä¹‰å‚æ•°
 	 * 
 	 * @param name
-	 *            ×Ô¶¨Òå²ÎÊıÃû³Æ
+	 *            è‡ªå®šä¹‰å‚æ•°åç§°
 	 * @param color
-	 *            Ê®Áù½øÖÆÑÕÉ«Öµ
+	 *            åå…­è¿›åˆ¶é¢œè‰²å€¼
 	 * @param value
-	 *            ¾ßÌåµÄÊı¾İ
+	 *            å…·ä½“çš„æ•°æ®
 	 */
 	public void addCostomData(String name, String color, String value) {
 		JSONObject infodata = new JSONObject();
@@ -118,7 +131,7 @@ public class SendTempleMsgBuilder implements WxPayDataBuilder {
 	private void appendParam(String key, String value, boolean isneed) throws LackParamExceptions {
 		if (value == null) {
 			if (isneed) {
-				throw new LackParamExceptions("²ÎÊı" + key + "²»ÄÜÎª¿Õ");
+				throw new LackParamExceptions("å‚æ•°" + key + "ä¸èƒ½ä¸ºç©º");
 			} else {
 				return;
 			}
@@ -129,18 +142,18 @@ public class SendTempleMsgBuilder implements WxPayDataBuilder {
 	@Override
 	public JSONObject hand() throws LackParamExceptions {
 		if (!build) {
-			throw new LackParamExceptions("Î´build³É¹¦£¬ÇëÏÈÈ·ÈÏbuild³É¹¦ºóÔÙÔËĞĞ");
+			throw new LackParamExceptions("æœªbuildæˆåŠŸï¼Œè¯·å…ˆç¡®è®¤buildæˆåŠŸåå†è¿è¡Œ");
 		}
 		String result = "";
 		JSONObject jsonObject = null;
 		try {
 			if (access_token == null) {
-				// »ñÈ¡access_token
+				// è·å–access_token
 				result = WxPayUtil.sendHttpsRequest(sendUrl, reStringBuffer.toString(), "text/xml", "utf-8", "GET");
 				jsonObject = JSONObject.fromObject(result);
 				if (jsonObject.getString("access_token") == null) {
 					jsonObject.put("return_code", "FAIL");
-					jsonObject.put("return_msg", "»ñÈ¡tokenÊ§°Ü");
+					jsonObject.put("return_msg", "è·å–tokenå¤±è´¥");
 					return jsonObject;
 				} else {
 					access_token = jsonObject.getString("access_token");
@@ -152,7 +165,7 @@ public class SendTempleMsgBuilder implements WxPayDataBuilder {
 
 		} catch (IOException e) {
 			e.printStackTrace();
-			// ±¸ÓÃÓòÃû
+			// å¤‡ç”¨åŸŸå
 			throw new LackParamExceptions(e.toString());
 		}
 

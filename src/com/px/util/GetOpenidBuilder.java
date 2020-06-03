@@ -4,6 +4,11 @@ import java.io.IOException;
 
 import net.sf.json.JSONObject;
 
+/**
+ * v1.0.2
+ * 
+ * @author 鍛ㄥ伐 2020-06-01
+ */
 public class GetOpenidBuilder implements WxPayDataBuilder {
 
 	private String appid, appsecret, code;
@@ -47,7 +52,7 @@ public class GetOpenidBuilder implements WxPayDataBuilder {
 
 		if (value == null) {
 			if (isneed) {
-				throw new LackParamExceptions("参数" + key + "不能为空");
+				throw new LackParamExceptions("鍙傛暟" + key + "涓嶈兘涓虹┖");
 			} else {
 				return;
 			}
@@ -73,17 +78,17 @@ public class GetOpenidBuilder implements WxPayDataBuilder {
 	@Override
 	public JSONObject hand() throws LackParamExceptions {
 		if (!build) {
-			throw new LackParamExceptions("未build成功，请先确认build成功后再运行");
+			throw new LackParamExceptions("鏈猙uild鎴愬姛锛岃鍏堢‘璁uild鎴愬姛鍚庡啀杩愯");
 		}
 		String result = "";
 		JSONObject jsonObject = null;
 		try {
-			// 正常是的域名
+			// 姝ｅ父鏄殑鍩熷悕
 			result = WxPayUtil.sendHttpsRequest(sendUrl, reStringBuffer.toString(), "text/xml", "utf-8", "GET");
 			jsonObject = JSONObject.fromObject(result);
 		} catch (IOException e) {
 			e.printStackTrace();
-			// 备用域名
+			// 澶囩敤鍩熷悕
 			throw new LackParamExceptions(e.toString());
 		}
 		return jsonObject;

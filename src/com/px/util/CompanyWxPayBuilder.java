@@ -4,6 +4,11 @@ import java.util.Map;
 
 import net.sf.json.JSONObject;
 
+/**
+ * v1.0.2
+ * 
+ * @author å‘¨å·¥ 2020-06-01
+ */
 public class CompanyWxPayBuilder implements WxPayDataBuilder {
 
 	private static String sendUrl = "https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers";
@@ -19,7 +24,7 @@ public class CompanyWxPayBuilder implements WxPayDataBuilder {
 	public CompanyWxPayBuilder(String certPath) {
 		nonce_str = WxPayUtil.getRandomStr(20);
 		this.certPath = certPath;
-		// Ä¬ÈÏ¶©µ¥Ê±¼äÎª°ëĞ¡Ê±ÄÚÓĞĞ§
+		// é»˜è®¤è®¢å•æ—¶é—´ä¸ºåŠå°æ—¶å†…æœ‰æ•ˆ
 		partner_trade_no = System.currentTimeMillis() + WxPayUtil.getRandomStr(8);
 		check_name = "NO_CHECK";
 	}
@@ -167,11 +172,11 @@ public class CompanyWxPayBuilder implements WxPayDataBuilder {
 	@Override
 	public JSONObject hand() throws LackParamExceptions {
 		if (!build) {
-			throw new LackParamExceptions("Î´build³É¹¦£¬ÇëÏÈÈ·ÈÏbuild³É¹¦ºóÔÙÔËĞĞ");
+			throw new LackParamExceptions("æœªbuildæˆåŠŸï¼Œè¯·å…ˆç¡®è®¤buildæˆåŠŸåå†è¿è¡Œ");
 		}
 
 		if (certPath == null || certPath.length() == 0) {
-			throw new LackParamExceptions("Î´ÉèÖÃÖ¤ÊéÂ·¾¶");
+			throw new LackParamExceptions("æœªè®¾ç½®è¯ä¹¦è·¯å¾„");
 		}
 
 		String result = "";
@@ -184,6 +189,8 @@ public class CompanyWxPayBuilder implements WxPayDataBuilder {
 			if (getResult.get("result_code") == null || !"SUCCESS".equalsIgnoreCase(getResult.get("result_code"))) {
 				resultJson.put("return_code", "FAIL");
 				resultJson.put("return_msg", getResult.get("return_msg"));
+				resultJson.put("err_code_des", getResult.get("err_code_des"));
+				resultJson.put("err_code", getResult.get("err_code"));
 			} else {
 				resultJson.put("return_code", "SUCCESS");
 				resultJson.put("return_msg", getResult.get("return_msg"));
@@ -203,7 +210,7 @@ public class CompanyWxPayBuilder implements WxPayDataBuilder {
 
 	private void getSign(String apikey, String value) throws LackParamExceptions {
 		if (apikey == null) {
-			throw new LackParamExceptions("ÉÌ»§ºÅAPIÃØÔ¿²»ÄÜÎª¿Õ");
+			throw new LackParamExceptions("å•†æˆ·å·APIç§˜é’¥ä¸èƒ½ä¸ºç©º");
 		} else {
 			sign = WxPayUtil.MD5(signStringBuffer.toString() + "key=" + apikey);
 		}
@@ -213,7 +220,7 @@ public class CompanyWxPayBuilder implements WxPayDataBuilder {
 
 		if (value == null) {
 			if (isneed) {
-				throw new LackParamExceptions("²ÎÊı" + key + "²»ÄÜÎª¿Õ");
+				throw new LackParamExceptions("å‚æ•°" + key + "ä¸èƒ½ä¸ºç©º");
 			} else {
 				return;
 			}
