@@ -1,0 +1,68 @@
+package com.mx.util;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class WeChatAPIV3Manager {
+    static volatile WeChatAPIV3Manager weChatAPIV3Manager = null;
+
+    ConcurrentHashMap<String,WeChatAPIV3> weChatAPIV3Map = null;
+
+    long lastClearTime = 0l;
+
+    private WeChatAPIV3Manager(){
+        weChatAPIV3Map = new ConcurrentHashMap<>();
+        lastClearTime = System.currentTimeMillis() / 1000;
+    }
+
+    public WeChatAPIV3 getWeChatApiV3(String mchid){
+        long lCurTime = System.currentTimeMillis() / 1000;
+        WeChatAPIV3 weChatAPIV3 = weChatAPIV3Map.get(mchid);
+        if(weChatAPIV3 != null && lCurTime - weChatAPIV3.getLastUseTime() > 3 * 3600){
+            weChatAPIV3Map.remove(mchid);
+            weChatAPIV3 = null;
+        }
+        if(weChatAPIV3 != null){
+            weChatAPIV3.setLastUseTime(lCurTime);
+        }
+        clearNoUserObject();
+        return weChatAPIV3;
+    }
+
+    public void setWeChatAPIV3Map(String mchid,WeChatAPIV3 weChatAPIV3){
+        if(weChatAPIV3 != null && weChatAPIV3.isStep()){
+            weChatAPIV3.setLastUseTime(System.currentTimeMillis() / 1000);
+            weChatAPIV3Map.put(mchid,weChatAPIV3);
+        }
+    }
+
+    public WeChatAPIV3 remove(String mchid){
+        return weChatAPIV3Map.remove(mchid);
+    }
+
+    private void clearNoUserObject(){
+        long lCurTime = System.currentTimeMillis() / 1000;
+        if(weChatAPIV3Map == null || lCurTime - lastClearTime >= 3 * 3600){
+            return;
+        }
+        Set<Map.Entry<String, WeChatAPIV3>> entries = weChatAPIV3Map.entrySet();
+        for(Map.Entry<String, WeChatAPIV3> entrie:entries){
+            if(lCurTime - entrie.getValue().getLastUseTime() >= 3 * 3600){
+                weChatAPIV3Map.remove(entrie.getKey());
+            }
+        }
+        lastClearTime = lCurTime;
+    }
+
+    public static WeChatAPIV3Manager getInstance(){
+        if (weChatAPIV3Manager == null){
+            synchronized (WeChatAPIV3Manager.class){
+                if (weChatAPIV3Manager == null){
+                    weChatAPIV3Manager = new WeChatAPIV3Manager();
+                }
+            }
+        }
+        return weChatAPIV3Manager;
+    }
+}
