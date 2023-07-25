@@ -1,55 +1,80 @@
 package com.mx.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.util.Base64;
+import com.wechat.pay.contrib.apache.httpclient.WechatPayHttpClientBuilder;
+import com.wechat.pay.contrib.apache.httpclient.WechatPayUploadHttpPost;
+import com.wechat.pay.contrib.apache.httpclient.auth.*;
+import com.wechat.pay.contrib.apache.httpclient.cert.CertificatesManager;
+import com.wechat.pay.contrib.apache.httpclient.util.PemUtil;
+import net.sf.json.JSONObject;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.*;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
-
-import com.wechat.pay.contrib.apache.httpclient.WechatPayHttpClientBuilder;
-import com.wechat.pay.contrib.apache.httpclient.WechatPayUploadHttpPost;
-import com.wechat.pay.contrib.apache.httpclient.auth.AutoUpdateCertificatesVerifier;
-import com.wechat.pay.contrib.apache.httpclient.auth.PrivateKeySigner;
-import com.wechat.pay.contrib.apache.httpclient.auth.WechatPay2Credentials;
-import com.wechat.pay.contrib.apache.httpclient.auth.WechatPay2Validator;
-import com.wechat.pay.contrib.apache.httpclient.util.PemUtil;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.*;
+import java.util.Base64;
 
 public class WeChatAPIV3 {
 
 	CloseableHttpClient httpClient;
+
+	CloseableHttpClient httpNoSignPayClient;
+
 	String mchId = "";
 	String mchSerialNo = "";
 	String apiV3Key = "";
 	String privateKeyFilePath = "";
 
 	String privateKey = "";
+	String certKeyFilePath = "";
 	PrivateKey merchantPrivateKey;
+	PublicKey merchantPublicKey;
+	PublicKey pingtaiPublicKey;
 	String errorHint = "";
+
+	public String getErrorHint() {
+		return errorHint;
+	}
+
+	public void setErrorHint(String errorHint) {
+		this.errorHint = errorHint;
+	}
+
+	public boolean isStep() {
+		return isStep;
+	}
+
+	long lastUseTime = 0;
+
+	public long getLastUseTime() {
+		return lastUseTime;
+	}
+
+	public void setLastUseTime(long lastUseTime) {
+		this.lastUseTime = lastUseTime;
+	}
+
+	public String getCertKeyFilePath() {
+		return certKeyFilePath;
+	}
+
+	public void setCertKeyFilePath(String certKeyFilePath) {
+		this.certKeyFilePath = certKeyFilePath;
+	}
 
 	public String getMchId() {
 		return mchId;
@@ -126,50 +151,92 @@ public class WeChatAPIV3 {
 		}
 	}
 
-	public static void main(String[] args) {
+	public void loadPTCert(String certKey) throws UnsupportedEncodingException {
+		pingtaiPublicKey = PemUtil.loadCertificate(new ByteArrayInputStream(certKey.getBytes("utf-8"))).getPublicKey();
+	}
 
-		WeChatAPIV3 apiv3 = new WeChatAPIV3();
+	public String rsaEncryptOAEP_PT(String message) throws IllegalBlockSizeException, IOException {
 
-		apiv3.setMchId("商户号");
-		apiv3.setMchSerialNo("证书序列号");
-		apiv3.setApiV3Key("APIV3秘钥");
-		apiv3.setPrivateKeyFilePath("证书私钥路径");
-
-		try {
-
-			apiv3.setup();
-
-			// 查询投诉列表
-			// System.out.print(apiv3.GetComplaintsList(0, 10,
-			// "2021-07-01","2021-07-16"));
-
-			// 查询投诉详情
-			// System.out.print(apiv3.GetComplaintsInfo("投诉单号"));
-
-			// 查询投诉历史
-			// System.out.print(apiv3.GetComplaintsHis("投诉单号", 0,
-			// 10));
-
-			// 创建投诉回调通知
-			// System.out.print(apiv3.CreateComplaintsNotify("回调地址"));
-
-			// 更新投诉回调通知
-			// System.out.print(apiv3.UpdateComplaintsNotify("回调地址"));
-
-			// 解密电话
-			// System.out.print(apiv3.rsaDecryptOAEP(
-			// "密文"));
-
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if (pingtaiPublicKey == null) {
+			errorHint = "未成功加载公钥";
+			return null;
 		}
 
+		try {
+			Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
+			cipher.init(Cipher.ENCRYPT_MODE, pingtaiPublicKey);
+
+			byte[] data = message.getBytes("utf-8");
+			byte[] cipherdata = cipher.doFinal(data);
+			return Base64.getEncoder().encodeToString(cipherdata);
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			throw new RuntimeException("当前Java环境不支持RSA v1.5/OAEP", e);
+		} catch (InvalidKeyException e) {
+			throw new IllegalArgumentException("无效的证书", e);
+		} catch (IllegalBlockSizeException | BadPaddingException e) {
+			throw new IllegalBlockSizeException("加密原串的长度不能超过214字节");
+		}
+	}
+
+	public String signBySHA256WithRSA(String content) {
+		if (!isStep) {
+			errorHint = "未成功启用Step";
+			return null;
+		}
+
+		if (merchantPrivateKey == null) {
+			errorHint = "未成功加载私钥";
+			return null;
+		}
+
+		try {
+			// PKCS8EncodedKeySpec priPKCS8 = new PKCS8EncodedKeySpec(
+			// org.apache.commons.codec.binary.Base64.decodeBase64(privateKey));
+			// PrivateKey priKey = KeyFactory.getInstance("RSA").generatePrivate(priPKCS8);
+
+			Signature signature = Signature.getInstance("SHA256withRSA");
+			signature.initSign(merchantPrivateKey);
+			signature.update(content.getBytes("utf-8"));
+
+			return org.apache.commons.codec.binary.Base64.encodeBase64String(signature.sign());
+		} catch (Exception e) {
+			// 签名失败
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public String rsaEncryptOAEP(String message) throws IllegalBlockSizeException, IOException {
+
+		if (!isStep) {
+			errorHint = "未成功启用Step";
+			return null;
+		}
+
+		if (merchantPublicKey == null) {
+			errorHint = "未成功加载公钥";
+			return null;
+		}
+
+		try {
+			Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
+			cipher.init(Cipher.ENCRYPT_MODE, merchantPublicKey);
+
+			byte[] data = message.getBytes("utf-8");
+			byte[] cipherdata = cipher.doFinal(data);
+			return Base64.getEncoder().encodeToString(cipherdata);
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			throw new RuntimeException("当前Java环境不支持RSA v1.5/OAEP", e);
+		} catch (InvalidKeyException e) {
+			throw new IllegalArgumentException("无效的证书", e);
+		} catch (IllegalBlockSizeException | BadPaddingException e) {
+			throw new IllegalBlockSizeException("加密原串的长度不能超过214字节");
+		}
 	}
 
 	public boolean doCheckParam() {
 
-		return doCheckValue(mchId, mchSerialNo, apiV3Key, privateKeyFilePath);
+		return doCheckValue(mchId, mchSerialNo, apiV3Key, privateKeyFilePath, certKeyFilePath);
 	}
 
 	public boolean doCheckValue(String... item) {
@@ -191,33 +258,85 @@ public class WeChatAPIV3 {
 
 		try {
 
-			privateKey = new String(Files.readAllBytes(Paths.get(privateKeyFilePath)), "utf-8");
-
-			// 加载商户私钥（privateKey：私钥字符串）
-			merchantPrivateKey = PemUtil.loadPrivateKey(new ByteArrayInputStream(privateKey.getBytes("utf-8")));
-
-			// 加载平台证书（mchId：商户号,mchSerialNo：商户证书序列号,apiV3Key：V3密钥）
-			AutoUpdateCertificatesVerifier verifier = new AutoUpdateCertificatesVerifier(
-					new WechatPay2Credentials(mchId, new PrivateKeySigner(mchSerialNo, merchantPrivateKey)),
-					apiV3Key.getBytes("utf-8"));
-
-			// 初始化httpClient
-			httpClient = WechatPayHttpClientBuilder.create().withMerchant(mchId, mchSerialNo, merchantPrivateKey)
-					.withValidator(new WechatPay2Validator(verifier)).build();
+			extracted();
+//			extractedNew();
 
 			isStep = true;
 
 		} catch (Exception e) {
-			// TODO: handle exception
 			errorHint = errorHint.toString();
 			isStep = false;
+			e.printStackTrace();
 		}
 
 	}
 
+	private void extractedNew() throws Exception {
+
+		String certKey = new String(Files.readAllBytes(Paths.get(certKeyFilePath)), "utf-8");
+
+		merchantPublicKey = PemUtil.loadCertificate(new ByteArrayInputStream(certKey.getBytes("utf-8")))
+				.getPublicKey();
+
+		privateKey = new String(Files.readAllBytes(Paths.get(privateKeyFilePath)), "utf-8");
+
+		merchantPrivateKey = PemUtil.loadPrivateKey(new ByteArrayInputStream(privateKey.getBytes("utf-8")));
+
+
+		CertificatesManager certificatesManager = CertificatesManager.getInstance();
+		// 向证书管理器增加需要自动更新平台证书的商户信息
+		certificatesManager.putMerchant(mchId, new WechatPay2Credentials(mchId,
+				new PrivateKeySigner(mchSerialNo, merchantPrivateKey)), apiV3Key.getBytes(StandardCharsets.UTF_8));
+		// ... 若有多个商户号，可继续调用putMerchant添加商户信息
+
+		// 从证书管理器中获取verifier
+		Verifier verifier = certificatesManager.getVerifier(mchId);
+		WechatPayHttpClientBuilder builder = WechatPayHttpClientBuilder.create()
+				.withMerchant(mchId, mchSerialNo, merchantPrivateKey)
+				.withValidator(new WechatPay2Validator(verifier));
+		// ... 接下来，你仍然可以通过builder设置各种参数，来配置你的HttpClient
+
+		// 通过WechatPayHttpClientBuilder构造的HttpClient，会自动的处理签名和验签，并进行证书自动更新
+		httpClient = builder.build();
+	}
+
+	@Deprecated
+	private void extracted() throws IOException {
+		privateKey = new String(Files.readAllBytes(Paths.get(privateKeyFilePath)), "utf-8");
+
+		String certKey = new String(Files.readAllBytes(Paths.get(certKeyFilePath)), "utf-8");
+
+		// 加载商户私钥（privateKey：私钥字符串）
+		merchantPrivateKey = PemUtil.loadPrivateKey(new ByteArrayInputStream(privateKey.getBytes("utf-8")));
+
+		// 加载商户公钥（privateKey：证书字符串）
+		merchantPublicKey = PemUtil.loadCertificate(new ByteArrayInputStream(certKey.getBytes("utf-8")))
+				.getPublicKey();
+
+		// 加载平台证书（mchId：商户号,mchSerialNo：商户证书序列号,apiV3Key：V3密钥）
+		AutoUpdateCertificatesVerifier verifier = new AutoUpdateCertificatesVerifier(
+				new WechatPay2Credentials(mchId, new PrivateKeySigner(mchSerialNo, merchantPrivateKey)),
+				apiV3Key.getBytes("utf-8"));
+
+
+		// 初始化httpClient
+		httpClient = WechatPayHttpClientBuilder.create().withMerchant(mchId, mchSerialNo, merchantPrivateKey)
+				.withValidator(new WechatPay2Validator(verifier)).build();
+
+		WechatPayHttpClientBuilder builder = WechatPayHttpClientBuilder.create()
+				.withMerchant(mchId, mchSerialNo, merchantPrivateKey)
+				//设置响应对象无需签名
+				.withValidator((response) -> true);
+
+		httpNoSignPayClient = builder.build();
+
+
+	}
+
+
 	/**
 	 * 查询投诉详情
-	 * 
+	 *
 	 * @param complaint_id
 	 *            投诉单号
 	 * @return
@@ -258,7 +377,7 @@ public class WeChatAPIV3 {
 
 	/**
 	 * 查询协商历史
-	 * 
+	 *
 	 * @param complaint_id
 	 *            投诉单号
 	 * @param offset
@@ -302,7 +421,7 @@ public class WeChatAPIV3 {
 
 	/**
 	 * 查询投诉单列表
-	 * 
+	 *
 	 * @param offset
 	 *            开始位置
 	 * @param limit
@@ -353,8 +472,48 @@ public class WeChatAPIV3 {
 	}
 
 	/**
+	 * 查询通知回调地址
+	 * @param
+	 * @return
+	 * @throws Exception
+	 */
+	public String queryComplaintsNotify() throws Exception {
+
+		if (!isStep) {
+			errorHint = "未成功启用Step";
+			return null;
+		}
+
+		String result = null;
+
+		URIBuilder uriBuilder = new URIBuilder("https://api.mch.weixin.qq.com/v3/merchant-service/complaint-notifications");
+		// 请求URL
+		HttpGet httpGet = new HttpGet(uriBuilder.build());
+		httpGet.addHeader("Accept", "application/json");
+
+
+		// 完成签名并执行请求
+		CloseableHttpResponse response = httpClient.execute(httpGet);
+
+		try {
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode == 200) { // 处理成功
+				result = EntityUtils.toString(response.getEntity());
+			} else if (statusCode == 204) { // 处理成功，无返回Body
+				result = "{'code':204}";
+			} else {
+				result = EntityUtils.toString(response.getEntity());
+			}
+		} finally {
+			response.close();
+		}
+
+		return result;
+	}
+
+	/**
 	 * 创建投诉回调通知
-	 * 
+	 *
 	 * @param url
 	 *            回调地址
 	 * @return
@@ -400,7 +559,7 @@ public class WeChatAPIV3 {
 
 	/**
 	 * 更新投诉回调通知
-	 * 
+	 *
 	 * @param url
 	 *            回调通知
 	 * @return
@@ -447,7 +606,7 @@ public class WeChatAPIV3 {
 
 	/**
 	 * 删除投诉回调通知地址
-	 * 
+	 *
 	 * @return
 	 * @throws Exception
 	 */
@@ -486,17 +645,15 @@ public class WeChatAPIV3 {
 
 	/**
 	 * 提交回复
-	 * 
+	 *
 	 * @param complaint_id
 	 *            被投诉单号
-	 * @param response_content
+	 * @param responseJson
 	 *            回复内容
-	 * @param response_images
-	 *            回复图片
 	 * @return
 	 * @throws Exception
 	 */
-	public String ReplyInfo(String complaint_id, String response_content, String response_images) throws Exception {
+	public String ReplyInfo(String complaint_id, JSONObject responseJson) throws Exception {
 
 		if (!isStep) {
 			errorHint = "未成功启用Step";
@@ -510,18 +667,9 @@ public class WeChatAPIV3 {
 				"https://api.mch.weixin.qq.com/v3/merchant-service/complaints-v2/" + complaint_id + "/response");
 		// 请求body参数
 
-		JSONObject dataJSON = new JSONObject();
-		dataJSON.put("complainted_mchid", mchId);
-		dataJSON.put("response_content", response_content);
+		responseJson.put("complainted_mchid", mchId);
 
-		String[] imgs = response_images.split(",");
-		JSONArray array = new JSONArray();
-
-		for (String img : imgs) {
-			array.add(img);
-		}
-
-		StringEntity entity = new StringEntity(dataJSON.toString());
+		StringEntity entity = new StringEntity(responseJson.toString(),"UTF-8");
 		entity.setContentType("application/json");
 		httpPost.setEntity(entity);
 		httpPost.setHeader("Accept", "application/json");
@@ -547,7 +695,7 @@ public class WeChatAPIV3 {
 
 	/**
 	 * 反馈处理完成
-	 * 
+	 *
 	 * @param complaint_id
 	 *            投诉单号
 	 * @return
@@ -594,7 +742,7 @@ public class WeChatAPIV3 {
 
 	/**
 	 * 上传图片
-	 * 
+	 *
 	 * @param filePath
 	 *            图片路径
 	 * @return
@@ -637,4 +785,226 @@ public class WeChatAPIV3 {
 		return result;
 	}
 
+	/**
+	 * 下载图片
+	 *
+	 * @param media_url
+	 *            图片路径
+	 * @return
+	 * @throws Exception
+	 */
+	public BufferedImage downLoadImg(String media_url, String filePath) throws Exception {
+
+		if (!isStep) {
+			errorHint = "未成功启用Step";
+			return null;
+		}
+
+		HttpGet httpGet = new HttpGet(media_url);
+		httpGet.setHeader("Accept", "application/json");
+
+		CloseableHttpResponse response = httpNoSignPayClient.execute(httpGet);
+
+		BufferedImage result = null;
+
+		try {
+			HttpEntity responseEntity = response.getEntity();
+			InputStream content = responseEntity.getContent();
+			result = ImageIO.read(content);
+			if(filePath != null && filePath.length() >= 0){
+				File file = new File(filePath);
+				if(!file.exists()){
+					file.createNewFile();
+				}
+				FileOutputStream fileOutputStream = new FileOutputStream(file);
+				int bytesWritten = 0;
+				int byteCount = 0;
+				byte[] bytes = new byte[1024];
+				while ((byteCount = content.read(bytes)) != -1)
+				{
+					fileOutputStream.write(bytes, bytesWritten, byteCount);
+					bytesWritten += byteCount;
+				}
+				content.close();
+				fileOutputStream.close();
+			}
+		} finally {
+			response.close();
+		}
+
+		return result;
+	}
+
+	/**
+	 * 发送请求
+	 *
+	 * @param url
+	 *            发送地址
+	 * @return
+	 * @throws Exception
+	 */
+	public String doSendPostUrl(String url, String sendcontent) throws Exception {
+
+		if (!isStep) {
+			errorHint = "未成功启用Step";
+			return null;
+		}
+
+		String result = null;
+
+		// 请求URL
+		HttpPost httpPost = new HttpPost(url);
+
+		StringEntity entity = new StringEntity(sendcontent, "utf-8");
+		entity.setContentType("application/json");
+		httpPost.setEntity(entity);
+		httpPost.setHeader("Accept", "application/json");
+
+		// 完成签名并执行请求
+		CloseableHttpResponse response = httpClient.execute(httpPost);
+
+		try {
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode == 200) { // 处理成功
+				result = EntityUtils.toString(response.getEntity());
+			} else if (statusCode == 204) { // 处理成功，无返回Body
+				result = "{'code':204}";
+			} else {
+				result = EntityUtils.toString(response.getEntity());
+			}
+		} finally {
+			response.close();
+		}
+
+		return result;
+	}
+
+	public String doSendPostUrl(String url, String sendcontent, String Wechatpay_Serial) throws Exception {
+
+		if (!isStep) {
+			errorHint = "未成功启用Step";
+			return null;
+		}
+
+		String result = null;
+
+		// 请求URL
+		HttpPost httpPost = new HttpPost(url);
+
+		StringEntity entity = new StringEntity(sendcontent, "utf-8");
+		entity.setContentType("application/json");
+		httpPost.setEntity(entity);
+		httpPost.setHeader("Accept", "application/json");
+		httpPost.addHeader("Wechatpay-Serial", Wechatpay_Serial);
+
+		// 完成签名并执行请求
+		CloseableHttpResponse response = httpClient.execute(httpPost);
+
+		try {
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode == 200) { // 处理成功
+				result = EntityUtils.toString(response.getEntity());
+			} else if (statusCode == 204) { // 处理成功，无返回Body
+				result = "{'code':204}";
+			} else {
+				result = EntityUtils.toString(response.getEntity());
+			}
+		} finally {
+			response.close();
+		}
+
+		return result;
+	}
+
+	/**
+	 * 发送请求
+	 *
+	 * @param url
+	 *            发送地址
+	 * @return
+	 * @throws Exception
+	 */
+	public String doSendGETUrl(String url) throws Exception {
+
+		if (!isStep) {
+			errorHint = "未成功启用Step";
+			return null;
+		}
+
+		String result = null;
+
+		// 请求URL
+		HttpGet httpGet = new HttpGet(url);
+		httpGet.setHeader("Accept", "application/json");
+
+		// 完成签名并执行请求
+		CloseableHttpResponse response = httpClient.execute(httpGet);
+
+		try {
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode == 200) { // 处理成功
+				result = EntityUtils.toString(response.getEntity());
+			} else if (statusCode == 204) { // 处理成功，无返回Body
+				result = "{'code':204}";
+			} else {
+				result = EntityUtils.toString(response.getEntity());
+			}
+		} finally {
+			response.close();
+		}
+
+		return result;
+	}
+
+	/**
+	 * 发送请求
+	 *
+	 * @param url
+	 *            发送地址
+	 * @return
+	 * @throws Exception
+	 */
+	public String doSendPostImages(String url, String filepath) throws Exception {
+
+		if (!isStep) {
+			errorHint = "未成功启用Step";
+			return null;
+		}
+
+		String result = null;
+
+		File file = new File(filepath);
+		URI uri = new URI(url);
+
+		try (FileInputStream ins1 = new FileInputStream(file)) {
+			String sha256 = DigestUtils.sha256Hex(ins1);
+			try (InputStream ins2 = new FileInputStream(file)) {
+				HttpPost request = new WechatPayUploadHttpPost.Builder(uri).withImage(file.getName(), sha256, ins2)
+						.build();
+				CloseableHttpResponse response = httpClient.execute(request);
+				try {
+					int statusCode = response.getStatusLine().getStatusCode();
+					if (statusCode == 200) { // 处理成功
+						result = EntityUtils.toString(response.getEntity());
+					} else if (statusCode == 204) { // 处理成功，无返回Body
+						result = "{'code':204}";
+					} else {
+						result = EntityUtils.toString(response.getEntity());
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				} finally {
+					response.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return result;
+	}
+
 }
+
